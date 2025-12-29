@@ -1,0 +1,548 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1"/>
+<title>ML4IoTBP DSL — Starting Guide</title>
+<style>
+  :root { --bg:#717689; --fg:#e6edf3; --muted:#9aa4af; --card:#4e525b; --line:#243042; --link:#7dd3fc; }
+  body { margin:0; font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, "Apple Color Emoji","Segoe UI Emoji"; background:var(--bg); color:var(--fg); }
+  header { padding:28px 18px; border-bottom:1px solid var(--line); background:linear-gradient(180deg, #4e525b 0%, #4e525b 90%, #717689 100%); }
+  header h1 { margin:0 0 8px 0; font-size: 22px; }
+  header p { margin:0; color:var(--muted); max-width: 980px; }
+  main { display:grid; grid-template-columns: 320px 1fr; gap:16px; padding:16px; max-width: 1300px; margin:0 auto; }
+  nav { position: sticky; top: 12px; align-self:start; background: var(--card); border:1px solid var(--line); border-radius: 14px; padding: 12px; }
+  nav h2 { font-size: 14px; margin: 6px 0 10px 0; color: var(--muted); letter-spacing: .08em; text-transform: uppercase; }
+  nav a { display:block; padding: 6px 8px; border-radius: 10px; color: var(--fg); text-decoration:none; }
+  nav a:hover { background: rgba(125,211,252,.08); color: var(--link); }
+  section { background: var(--card); border:1px solid var(--line); border-radius: 14px; padding: 16px; }
+  h2 { margin: 0 0 10px 0; font-size: 18px; }
+  h3 { margin-top: 22px; margin-bottom: 8px; font-size: 16px; }
+  h4 { margin-top: 16px; margin-bottom: 8px; font-size: 14px; color: var(--muted); }
+  p, li { line-height: 1.55; }
+  .muted { color: var(--muted); }
+  code { background: rgba(255,255,255,.06); padding: 1px 6px; border-radius: 8px; }
+  pre { background: rgba(255,255,255,.04); padding: 12px; border-radius: 12px; overflow:auto; border:1px solid var(--line); }
+  .callout { padding: 10px 12px; border-radius: 12px; border:1px dashed rgba(125,211,252,.35); background: rgba(125,211,252,.06); }
+  .tip { border-color: rgba(34,197,94,.35); background: rgba(34,197,94,.08); }
+  .warn { border-color: rgba(245,158,11,.35); background: rgba(245,158,11,.08); }
+  .bad { border-color: rgba(239,68,68,.35); background: rgba(239,68,68,.08); }
+  .pill { display:inline-block; padding: 2px 10px; border-radius: 999px; border:1px solid var(--line); color: var(--muted); font-size: 12px; margin-right: 6px; }
+  table { width:100%; border-collapse: collapse; overflow:hidden; border-radius: 12px; border:1px solid var(--line); margin-top: 10px; }
+  th, td { text-align:left; padding: 10px; border-bottom: 1px solid var(--line); vertical-align: top; }
+  th { font-size: 12px; color: var(--muted); text-transform: uppercase; letter-spacing: .08em; background: rgba(255,255,255,.03); }
+  tr:last-child td { border-bottom: none; }
+  details summary { cursor:pointer; color: var(--link); }
+  @media (max-width: 980px) { main { grid-template-columns: 1fr; } nav { position: relative; top:auto; } }
+</style>
+</head>
+<body>
+<header>
+  <h1>ML4IoTBP DSL — Starting Guide</h1>
+  <p>Practical guide for writing DSL files (YAML) that define data sources, feature engineering, datasets, ML models, and runtime predictions for IoT-Enhanced Business Processes. Includes examples and an end-to-end walkthrough.</p>
+</header>
+
+<main>
+<nav>
+  <h2>Contents</h2>
+  <a href="#getting-started">Getting started</a>
+  <a href="#structure">File structure</a>
+  <a href="#process-context">1. Process context</a>
+  <a href="#process-ds">2. Process data sources</a>
+  <a href="#iot-ds">3. IoT data sources</a>
+  <a href="#features">4. Features</a>
+  <a href="#dataset">5. Datasets</a>
+  <a href="#models">6. Models & training</a>
+  <a href="#runtime">7. Runtime predictions</a>
+  <a href="#end-to-end">End-to-end example</a>
+  <a href="#patterns">Patterns & best practices</a>
+  <a href="#troubleshooting">Troubleshooting</a>
+  <hr>
+  <a href="reference.html">Go to Grammar Reference</a>
+</nav>
+
+<div>
+
+<section id="getting-started">
+  <h2>Getting started</h2>
+  <div class="callout tip">
+    <strong>Recommended workflow</strong>
+    <ol>
+      <li>Start from the minimal skeleton.</li>
+      <li>Add data sources (process + IoT).</li>
+      <li>Define features and then the dataset.</li>
+      <li>Configure the model and training schedule.</li>
+      <li>Optionally add runtime predictions to inject results back into BPMN.</li>
+    </ol>
+  </div>
+  <details>
+    <summary>Minimal skeleton</summary>
+    <pre>process-context:
+  engine: Camunda
+  host: http://localhost:8080
+  process-id: smartlogistics
+
+process-data-sources: {}
+iot-data-sources: {}
+features: {}
+dataset: {}
+models: {}
+runtime-predictions: {}
+</pre>
+  </details>
+</section>
+
+<section id="structure">
+  <h2>File structure</h2>
+  <p>Most DSL files use the following top-level sections:</p>
+  <table>
+    <thead><tr><th>Section</th><th>What it specifies</th><th>When you need it</th></tr></thead>
+    <tbody>
+      <tr><td><code>process-context</code></td><td>BPMN engine + process id</td><td>Whenever you read process execution data or inject predictions</td></tr>
+      <tr><td><code>process-data-sources</code></td><td>Process events & variables</td><td>For any feature derived from process execution</td></tr>
+      <tr><td><code>iot-data-sources</code></td><td>Telemetry streams/endpoints</td><td>For any feature derived from sensors/devices</td></tr>
+      <tr><td><code>features</code></td><td>Feature engineering rules</td><td>Always needed for datasets and runtime inputs</td></tr>
+      <tr><td><code>dataset</code></td><td>Dataset composition & splits</td><td>To train/evaluate models</td></tr>
+      <tr><td><code>models</code></td><td>Algorithm + training config</td><td>To define how models are trained and assessed</td></tr>
+      <tr><td><code>runtime-predictions</code></td><td>Inference triggers + BPMN actions</td><td>When predictions must influence process execution</td></tr>
+    </tbody>
+  </table>
+</section>
+
+<section id="process-context">
+  <h2>1. Process context</h2>
+  <p>This block tells tooling how to connect to the BPMN engine and which process deployment to monitor.</p>
+  <div class="callout">
+    <span class="pill">Common engines</span>
+    <span class="muted">Activiti, Bizagi, Bonita, Camunda, Flowable, Signavio, jBPM</span>
+  </div>
+  <pre>process-context:
+  engine: Activiti
+  host: http://localhost:8080
+  process-id: smartlogistics
+</pre>
+</section>
+
+<section id="process-ds">
+  <h2>2. Process data sources</h2>
+  <p>Define which BPMN elements and events to capture, plus the variables to extract on each event.</p>
+  <pre>process-data-sources:
+  task_event_source:
+    format: application/json
+    elements:
+      evaluateQualityTask:
+        type: User Task
+        events:
+          started:
+            variables:
+              - currentTime: timeStamp
+                internal-id: evalStartingTime
+          completed:
+            variables:
+              - currentTime: timeStamp
+                internal-id: evalCompleteTime
+              - palletId: string
+                internal-id: palletId
+              - qualityFirmness: string
+                internal-id: qualityFirmness
+              - qualityColor: string
+                internal-id: qualityColor
+              - qualityDamages: string
+                internal-id: qualityDamages
+
+  gateway_event_source:
+    format: application/json
+    elements:
+      bacteriaCondition:
+        type: Gateway
+        events:
+          path_evaluation:
+            variables:
+              - selectedFlow: string
+                internal-id: bacteria_detected
+</pre>
+  <div class="callout tip">
+    <strong>Tip:</strong> Use <code>internal-id</code> for stable references (e.g., use the same variable name even if engines change).
+  </div>
+</section>
+
+<section id="iot-ds">
+  <h2>3. IoT data sources</h2>
+  <p>The DSL supports both message-oriented brokers and HTTP endpoints:</p>
+  <ul>
+    <li><code>HTTPCompliant</code> — host + protocol + broker + topic</li>
+    <li><code>MessageOriented</code> — end-point + method + sampling-time</li>
+  </ul>
+
+  <h3>3.1 Message-oriented telemetry (e.g., MQTT)</h3>
+  <pre>iot-data-sources:
+  container_humidity_sensor:
+    paradigm: HTTPCompliant
+    format: application/json
+    host: 192.168.42.2
+    protocol: AMQP
+    broker: EMQX
+    topic: container.humidity.topic
+    schema:
+      - timestamp: dateTime
+      - humidity: float
+</pre>
+
+  <h3>3.2 HTTP telemetry (REST polling)</h3>
+  <pre>iot-data-sources:
+  container_temperature_sensor:
+    paradigm: MessageOriented
+    format: application/json
+    end-point: http://sensor/api/temp
+    method: DELETE
+    sampling-time: 10s
+    schema:
+      - timestamp: dateTime
+      - temperature: float
+</pre>
+
+  <div class="callout warn">
+    <strong>Best practice:</strong> Include <code>timestamp</code> and a correlation key (e.g., <code>palletId</code>) in the schema when aligning telemetry with process instances.
+  </div>
+</section>
+
+<section id="features">
+  <h2>4. Features</h2>
+  <p>Features declare how to transform raw data into dataset columns. Operations often include:</p>
+  <div class="callout">
+    <span class="pill">Common operations</span>
+    <span class="muted">avg, count, future_event_exists, include, latest_value, max, min, substract, sum</span>
+  </div>
+  <pre>features:
+  f_quality_results:
+    from: task_event_source
+    operation: include
+    fields:
+      - palletId
+      - qualityFirmness
+      - qualityColor
+      - qualityDamages
+
+  f_quality_eval_duration:
+    from: task_event_source
+    operation: substract
+    fields:
+      - evalStartingTime
+      - evalCompleteTime
+
+  f_avg_container_humidity_during:
+    from: container_humidity_sensor
+    operation: avg
+    field: humidity
+    window: 30m
+    anchor:
+      element: evaluateQualityTask
+      event: completed
+
+  label_bacteria_detected:
+    from: gateway_event_source
+    operation: future_event_exists
+    field: bacteria_detected
+    target-type: binary
+    positive-class: yes
+</pre>
+</section>
+
+<section id="dataset">
+  <h2>5. Datasets</h2>
+  <p>Datasets define:</p>
+  <ul>
+    <li>Split ratios (<code>train-ratio</code>, <code>val-ratio</code>, <code>test-ratio</code>)</li>
+    <li>Sampling point (temporal alignment) and correlation key</li>
+    <li>Which features become columns (<code>data</code>)</li>
+    <li>Optional <code>label</code> for supervised learning</li>
+  </ul>
+  <pre>dataset:
+  microbial_risk_ds:
+    train-ratio: 0.7
+    val-ratio: 0.15
+    test-ratio: 0.15
+    sampling-point:
+      anchor:
+        element: evaluateQualityTask
+        event: completed
+      key: palletId
+    data:
+      - PI: f_quality_results
+      - QED: f_quality_eval_duration
+      - CHD: f_avg_container_humidity_during
+    label: label_bacteria_detected
+</pre>
+</section>
+
+<section id="models">
+  <h2>6. Models & training</h2>
+  <p>Models connect an algorithm to a dataset and define training and evaluation.</p>
+  <div class="callout">
+    <span class="pill">Learning types</span>
+    <span class="muted">Supervised, Unsupervised</span>
+    <span class="pill" style="margin-left:10px">Algorithms (examples)</span>
+    <span class="muted">Random Forest, Logistic Regression, SVM, K-Means</span>
+  </div>
+  <pre>models:
+  ml_bacteria_prediction:
+    algorithm: Random Forest
+    learning-type: Supervised
+    dataset: microbial_risk_ds
+    hyperparameters:
+      n_estimators: 200
+      max_depth: 10
+    training:
+      type: Batch
+      metrics: [f1, roc_auc]
+      schedule:
+        type: Periodic
+        every: 24h
+</pre>
+
+  <div class="callout tip">
+    <strong>Tip:</strong> For imbalanced binary labels, consider metrics like <code>f1</code> and <code>roc_auc</code>.
+  </div>
+</section>
+
+<section id="runtime">
+  <h2>7. Runtime predictions</h2>
+  <p>Runtime predictions specify (1) when inference is triggered and (2) what BPMN action to perform with the result (message, variable, signal), optionally guarded by a probability threshold.</p>
+  <pre>runtime-predictions:
+  predict_bacteria:
+    model: ml_bacteria_prediction
+    trigger:
+      type: Periodic
+      every: 10m
+      first:
+        evaluateQualityTask: completed
+    inputFeatures:
+      - f_quality_results
+      - f_quality_eval_duration
+      - f_avg_container_humidity_during
+    output:
+      name: predictedBacteriaRisk
+      condition:
+        operator: &quot;&gt;=&quot;
+        threshold: 0.85
+      onTrue:
+        action: Set Message
+        bpmn-id: predictedBacteria
+</pre>
+  <div class="callout warn">
+    <strong>Reminder:</strong> Your BPMN model must be prepared to receive injected messages/signals/variables.
+  </div>
+</section>
+
+<section id="end-to-end">
+  <h2>End-to-end example</h2>
+  <p>The following file is a complete example that combines process data, IoT telemetry, feature engineering, a supervised model, and runtime prediction injection.</p>
+  <details open>
+    <summary>Complete YAML example</summary>
+    <pre># Smart logistics — bacteria risk prediction
+
+process-context:
+  engine: Activiti
+  host: http://localhost:8080
+  process-id: smartlogistics
+
+process-data-sources:
+  task_event_source:
+    format: application/json
+    elements:
+      evaluateQualityTask:
+        type: User Task
+        events:
+          started:
+            variables:
+              - currentTime: timeStamp
+                internal-id: evalStartingTime
+          completed:
+            variables:
+              - currentTime: timeStamp
+                internal-id: evalCompleteTime
+              - palletId: string
+                internal-id: palletId
+              - qualityFirmness: string
+                internal-id: qualityFirmness
+              - qualityColor: string
+                internal-id: qualityColor
+              - qualityDamages: string
+                internal-id: qualityDamages
+
+  gateway_event_source:
+    format: application/json
+    elements:
+      bacteriaCondition:
+        type: Gateway
+        events:
+          path_evaluation:
+            variables:
+              - selectedFlow: string
+                internal-id: bacteria_detected
+
+iot-data-sources:
+  container_humidity_sensor:
+    paradigm: HTTPCompliant
+    format: application/json
+    host: 192.168.42.2
+    protocol: AMQP
+    broker: EMQX
+    topic: container.humidity.topic
+    schema:
+      - timestamp: dateTime
+      - humidity: float
+
+iot-data-sources:
+  container_temperature_sensor:
+    paradigm: MessageOriented
+    format: application/json
+    end-point: http://sensor/api/temp
+    method: DELETE
+    sampling-time: 10s
+    schema:
+      - timestamp: dateTime
+      - temperature: float
+
+features:
+  f_quality_results:
+    from: task_event_source
+    operation: include
+    fields:
+      - palletId
+      - qualityFirmness
+      - qualityColor
+      - qualityDamages
+
+  f_quality_eval_duration:
+    from: task_event_source
+    operation: substract
+    fields:
+      - evalStartingTime
+      - evalCompleteTime
+
+  f_avg_container_humidity_during:
+    from: container_humidity_sensor
+    operation: avg
+    field: humidity
+    window: 30m
+    anchor:
+      element: evaluateQualityTask
+      event: completed
+
+  label_bacteria_detected:
+    from: gateway_event_source
+    operation: future_event_exists
+    field: bacteria_detected
+    target-type: binary
+    positive-class: yes
+
+dataset:
+  microbial_risk_ds:
+    train-ratio: 0.7
+    val-ratio: 0.15
+    test-ratio: 0.15
+    sampling-point:
+      anchor:
+        element: evaluateQualityTask
+        event: completed
+      key: palletId
+    data:
+      - PI: f_quality_results
+      - QED: f_quality_eval_duration
+      - CHD: f_avg_container_humidity_during
+    label: label_bacteria_detected
+
+models:
+  ml_bacteria_prediction:
+    algorithm: Random Forest
+    learning-type: Supervised
+    dataset: microbial_risk_ds
+    hyperparameters:
+      n_estimators: 200
+      max_depth: 10
+    training:
+      type: Batch
+      metrics: [f1, roc_auc]
+      schedule:
+        type: Periodic
+        every: 24h
+
+runtime-predictions:
+  predict_bacteria:
+    model: ml_bacteria_prediction
+    trigger:
+      type: Periodic
+      every: 10m
+      first:
+        evaluateQualityTask: completed
+    inputFeatures:
+      - f_quality_results
+      - f_quality_eval_duration
+      - f_avg_container_humidity_during
+    output:
+      name: predictedBacteriaRisk
+      condition:
+        operator: &quot;&gt;=&quot;
+        threshold: 0.85
+      onTrue:
+        action: Set Message
+        bpmn-id: predictedBacteria
+</pre>
+  </details>
+</section>
+
+<section id="patterns">
+  <h2>Patterns & best practices</h2>
+
+  <h3>Temporal alignment</h3>
+  <ul>
+    <li>Prefer <code>dataset.sampling-point</code> when most features share the same reference instant.</li>
+    <li>Use feature-level <code>anchor</code> only for exceptions.</li>
+    <li>Pick a stable <code>key</code> that exists in all aligned sources (process + IoT).</li>
+  </ul>
+
+  <h3>Clean ids</h3>
+  <ul>
+    <li>Use stable ids for sources and models (avoid renaming once referenced).</li>
+    <li>Prefix features with <code>f_</code> and labels with <code>label_</code>.</li>
+  </ul>
+
+  <h3>Incremental building</h3>
+  <ol>
+    <li>Validate after adding each top-level section.</li>
+    <li>Keep examples small; scale once validation succeeds.</li>
+  </ol>
+</section>
+
+<section id="troubleshooting">
+  <h2>Troubleshooting</h2>
+  <div class="callout bad">
+    <strong>Common issues</strong>
+    <ul>
+      <li><strong>Missing required properties</strong> (e.g., HTTP sources missing <code>end-point</code>/<code>method</code>/<code>sampling-time</code>).</li>
+      <li><strong>Wrong enum values</strong> (engine, protocol, broker, algorithm, metrics).</li>
+      <li><strong>Typos in referenced ids</strong> (feature references a non-existing data source).</li>
+      <li><strong>Supervised vs unsupervised mismatch</strong> (supervised model but dataset has no <code>label</code>).</li>
+    </ul>
+  </div>
+
+  <div class="callout tip">
+    <strong>Fast debug loop</strong>
+    <ol>
+      <li>Run validation in the IDE.</li>
+      <li>Fix the first error first (it often cascades).</li>
+      <li>Ensure ids match exactly (YAML is case-sensitive in practice).</li>
+    </ol>
+  </div>
+</section>
+
+</div>
+</main>
+
+<footer style="padding:18px; text-align:center; color:var(--muted); border-top:1px solid var(--line);">
+  User manual generated from JSON-Schema (<code>IoT-BP-ML-Grammar.json</code>).
+</footer>
+
+</body>
+</html>

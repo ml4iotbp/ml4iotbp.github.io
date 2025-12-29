@@ -1,0 +1,851 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1"/>
+<title>ML4IoTBP DSL — Grammar Reference</title>
+<style>
+  :root { --bg:#717689; --fg:#e6edf3; --muted:#9aa4af; --card:#4e525b; --line:#243042; --link:#7dd3fc; }
+  body { margin:0; font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, "Apple Color Emoji","Segoe UI Emoji"; background:var(--bg); color:var(--fg); }
+  header { padding:28px 18px; border-bottom:1px solid var(--line); background:linear-gradient(180deg, #4e525b 0%, #4e525b 90%, #717689 100%); }
+  header h1 { margin:0 0 8px 0; font-size: 22px; }
+  header p { margin:0; color:var(--muted); max-width: 85%; }
+  main { display:grid; grid-template-columns: 320px 1fr; gap:16px; padding:16px; max-width: 1300px; margin:0 auto; }
+  nav { position: sticky; top: 12px; align-self:start; background: var(--card); border:1px solid var(--line); border-radius: 14px; padding: 12px; }
+  nav h2 { font-size: 14px; margin: 6px 0 10px 0; color: var(--muted); letter-spacing: .08em; text-transform: uppercase; }
+  nav a { display:block; padding: 6px 8px; border-radius: 10px; color: var(--fg); text-decoration:none; }
+  nav a:hover { background: rgba(125,211,252,.08); color: var(--link); }
+  section { background: var(--card); border:1px solid var(--line); border-radius: 14px; padding: 16px; }
+  h2 { margin: 0 0 10px 0; font-size: 18px; }
+  h3 { margin-top: 22px; margin-bottom: 8px; font-size: 16px; }
+  h4 { margin-top: 16px; margin-bottom: 8px; font-size: 14px; color: var(--muted); }
+  p { color: var(--fg); line-height: 1.5; }
+  code { background: rgba(255,255,255,.06); padding: 1px 6px; border-radius: 8px; }
+  pre { background: rgba(255,255,255,.04); padding: 12px; border-radius: 12px; overflow:auto; border:1px solid var(--line); }
+  table { width:100%; border-collapse: collapse; overflow:hidden; border-radius: 12px; border:1px solid var(--line); }
+  th, td { text-align:left; padding: 10px; border-bottom: 1px solid var(--line); vertical-align: top; }
+  th { font-size: 12px; color: var(--muted); text-transform: uppercase; letter-spacing: .08em; background: rgba(255,255,255,.03); }
+  tr:last-child td { border-bottom: none; }
+  details summary { cursor:pointer; color: var(--link); }
+  .pill { display:inline-block; padding: 2px 10px; border-radius: 999px; border:1px solid var(--line); color: var(--muted); font-size: 12px; margin-right: 6px; }
+  .pill.ok { border-color: rgba(34,197,94,.35); color: rgba(167,243,208,.9); }
+  .pill.warn { border-color: rgba(251,191,36,.35); color: rgba(253,230,138,.95); }
+  .muted { color: var(--muted); }
+  .grid2 { display:grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  .callout { padding: 10px 12px; border-radius: 12px; border:1px dashed rgba(125,211,252,.35); background: rgba(125,211,252,.06); color: var(--fg); }
+  .k { color: var(--link); }
+  @media (max-width: 980px) { main { grid-template-columns: 1fr; } nav { position: relative; top:auto; } }
+</style>
+</head>
+<body>
+<header>
+  <h1>ML4IoTBP DSL — Grammar Reference (JSON-Schema)</h1>
+  <p>This page documents the YAML grammar defined by the JSON-Schema file (<a href="ML4IoTBP-Grammar.json" target="_blank"><code>IoT-BP-ML-Grammar.json</code></a>). It summarizes the root structure, the available sections, and each schema definition, including constraints (required fields, enums, regex keys, and oneOf/anyOf rules).</p>
+</header>
+<main>
+
+<nav><h2>On this page</h2><a href='#overview'>Overview</a>
+<a href='#root'>Root document</a>
+<a href='#sections'>Top-level sections</a>
+<a href='#enums'>Enumerations</a>
+<a href='#definitions'>Definitions</a>
+<a href='#def-runtime-predictions'>runtime-predictions</a>
+<a href='#def-models'>models</a>
+<a href='#def-dataset'>dataset</a>
+<a href='#def-features'>features</a>
+<a href='#def-featureDef'>featureDef</a>
+<a href='#def-anchor'>anchor</a>
+<a href='#def-iotDataSourceWithConfig'>iotDataSourceWithConfig</a>
+<a href='#def-iotDataSource'>iotDataSource</a>
+<a href='#def-processContext'>processContext</a>
+<a href='#def-processDataSource'>processDataSource</a>
+<a href='#def-bpmnElement'>bpmnElement</a>
+<a href='#def-events'>events</a>
+<a href='#def-eventObject'>eventObject</a>
+<a href='#def-variables'>variables</a>
+<a href='#def-variable'>variable</a>
+<hr>
+<a href="index.html">Back to Starting Guide</a>
+</nav>
+<div>
+<section id='overview'><h2>Overview</h2>
+<div class='callout'><strong>What this DSL covers:</strong> process context & process data sources, IoT data sources, feature definitions, dataset specification, ML models and training schedules, and runtime prediction integration.</div>
+<p class='muted'>Schema draft: <code>http://json-schema.org/draft-07/schema#</code></p>
+</section>
+<section id='root'><h2>Root document</h2>
+<p><span class='pill'>type: object</span> <span class='pill warn'>additionalProperties: false</span></p>
+<p><strong>Title:</strong> Data sources YAML grammar</p>
+<h3>Presence rules (anyOf)</h3>
+<p>The root document is valid if it contains at least one of the following required groups:</p><ul>
+<li><code>process-data-sources</code>, <code>process-context</code></li>
+<li><code>iot-data-sources</code></li>
+<li><code>features</code></li>
+<li><code>dataset</code></li>
+<li><code>models</code></li>
+<li><code>runtime-predictions</code></li>
+</ul>
+</section>
+<section id='sections'><h2>Top-level sections</h2>
+<table><thead><tr><th>Key</th><th>Type</th><th>Description</th><th>Notes</th></tr></thead><tbody>
+
+        <tr>
+          <td><code>process-context</code></td>
+          <td>object</td>
+          <td></td>
+          <td>Ref: <a href="#def-processContext">processContext</a></td>
+        </tr>
+        
+
+        <tr>
+          <td><code>process-data-sources</code></td>
+          <td>object</td>
+          <td></td>
+          <td>Ref: <a href="#def-processDataSource">processDataSource</a></td>
+        </tr>
+        
+
+        <tr>
+          <td><code>iot-data-sources</code></td>
+          <td>object</td>
+          <td></td>
+          <td>patternProperties</td>
+        </tr>
+        
+
+        <tr>
+          <td><code>features</code></td>
+          <td>object</td>
+          <td></td>
+          <td>Ref: <a href="#def-features">features</a></td>
+        </tr>
+        
+
+        <tr>
+          <td><code>dataset</code></td>
+          <td>object</td>
+          <td></td>
+          <td>Ref: <a href="#def-dataset">dataset</a></td>
+        </tr>
+        
+
+        <tr>
+          <td><code>models</code></td>
+          <td>object</td>
+          <td></td>
+          <td>Ref: <a href="#def-models">models</a></td>
+        </tr>
+        
+
+        <tr>
+          <td><code>runtime-predictions</code></td>
+          <td>object</td>
+          <td></td>
+          <td>Ref: <a href="#def-runtime-predictions">runtime-predictions</a></td>
+        </tr>
+        
+</tbody></table>
+<h3>Typical file layout</h3>
+<details><summary>Show an illustrative YAML skeleton</summary><pre>process-context:
+  engine: Camunda
+  host: http://localhost:8080
+  process-id: smartlogistics
+
+process-data-sources:
+  task_event_source:
+    format: application/json
+    elements:
+      evaluateQualityTask:
+        type: User Task
+        events:
+          started:
+            variables:
+              - currentTime: timeStamp
+                internal-id: evalStartingTime
+          completed:
+            variables:
+              - currentTime: timeStamp
+                internal-id: evalCompleteTime
+
+iot-data-sources:
+  container_temperature_sensor:
+    paradigm: HTTPCompliant
+    format: application/json
+    end-point: http://sensor/api/temp
+    method: GET
+    sampling-time: 10s
+    schema:
+      - timestamp: dateTime
+      - temperature: float
+
+features:
+  f_avg_temp:
+    from: container_temperature_sensor
+    operation: avg
+    field: temperature
+    window: 30m
+    anchor:
+      element: evaluateQualityTask
+      event: completed
+
+dataset:
+  microbial_risk_ds:
+    train-ratio: 0.7
+    val-ratio: 0.15
+    test-ratio: 0.15
+    data:
+      - PI: f_pallet_id
+      - CTB: f_avg_temp
+
+models:
+  ml_bacteria_prediction:
+    algorithm: Random Forest
+    learning-type: Supervised
+    dataset: microbial_risk_ds
+    training:
+      type: Batch
+      metrics: [f1, roc_auc]
+      schedule:
+        type: Periodic
+        every: 24h
+
+runtime-predictions:
+  predict_bacteria:
+    model: ml_bacteria_prediction
+    trigger:
+      type: Periodic
+      every: 10m
+      first:
+        evaluateQualityTask: completed
+    inputFeatures: [f_avg_temp]
+    output: {}</pre></details>
+</section>
+<section id='enums'><h2>Enumerations</h2>
+<p class='muted'>The schema defines several enumerations used across the DSL. This list groups identical enum sets and shows where they appear.</p>
+<details><summary><code>accuracy</code>, <code>precision</code>, <code>f1</code>, <code>roc_auc</code>, <code>confusion_matrix</code>, <code>mae</code>, <code>mse</code>, <code>rmse</code> … <span class='muted'>(used in 1 place(s))</span></summary>
+<div class='grid2'>
+<div><h4>Values</h4><p><code>accuracy</code>, <code>precision</code>, <code>f1</code>, <code>roc_auc</code>, <code>confusion_matrix</code>, <code>mae</code>, <code>mse</code>, <code>rmse</code>, <code>silhouette</code>, <code>davies_bouldin</code>, <code>calinski_harabasz</code>, <code>anomaly_rate</code></p></div>
+<div><h4>Appears in</h4><ul><li><code>definitions/models/patternProperties/^[A-Za-z_][A-Za-z0-9_-]+$/properties/training/properties/metrics/items</code></li></ul></div>
+</div></details>
+<details><summary><code>avg</code>, <code>min</code>, <code>max</code>, <code>count</code>, <code>sum</code>, <code>substract</code>, <code>latest_value</code>, <code>include</code> … <span class='muted'>(used in 1 place(s))</span></summary>
+<div class='grid2'>
+<div><h4>Values</h4><p><code>avg</code>, <code>min</code>, <code>max</code>, <code>count</code>, <code>sum</code>, <code>substract</code>, <code>latest_value</code>, <code>include</code>, <code>future_event_exists</code></p></div>
+<div><h4>Appears in</h4><ul><li><code>definitions/featureDef/properties/operation</code></li></ul></div>
+</div></details>
+<details><summary><code>string</code>, <code>integer</code>, <code>double</code>, <code>float</code>, <code>boolean</code>, <code>timeStamp</code>, <code>date</code>, <code>dateTime</code> … <span class='muted'>(used in 1 place(s))</span></summary>
+<div class='grid2'>
+<div><h4>Values</h4><p><code>string</code>, <code>integer</code>, <code>double</code>, <code>float</code>, <code>boolean</code>, <code>timeStamp</code>, <code>date</code>, <code>dateTime</code>, <code>number</code></p></div>
+<div><h4>Appears in</h4><ul><li><code>definitions/variable/patternProperties/^(?!internal-id$)[A-Za-z_][A-Za-z0-9_-]+$</code></li></ul></div>
+</div></details>
+<details><summary><code>Camunda</code>, <code>Bonita</code>, <code>Activiti</code>, <code>Bizagi</code>, <code>Flowable</code>, <code>jBPM</code>, <code>Signavio</code> <span class='muted'>(used in 1 place(s))</span></summary>
+<div class='grid2'>
+<div><h4>Values</h4><p><code>Camunda</code>, <code>Bonita</code>, <code>Activiti</code>, <code>Bizagi</code>, <code>Flowable</code>, <code>jBPM</code>, <code>Signavio</code></p></div>
+<div><h4>Appears in</h4><ul><li><code>definitions/processContext/properties/engine</code></li></ul></div>
+</div></details>
+<details><summary><code>Process</code>, <code>Task</code>, <code>User Task</code>, <code>Service Task</code>, <code>Message</code>, <code>Gateway</code>, <code>Exclusive Gateway</code> <span class='muted'>(used in 1 place(s))</span></summary>
+<div class='grid2'>
+<div><h4>Values</h4><p><code>Process</code>, <code>Task</code>, <code>User Task</code>, <code>Service Task</code>, <code>Message</code>, <code>Gateway</code>, <code>Exclusive Gateway</code></p></div>
+<div><h4>Appears in</h4><ul><li><code>definitions/bpmnElement/patternProperties/^[A-Za-z_][A-Za-z0-9_-]*$/properties/type</code></li></ul></div>
+</div></details>
+<details><summary><code>AMQP</code>, <code>MQTT</code>, <code>STOMP</code>, <code>XMPP</code>, <code>Kafka</code> <span class='muted'>(used in 2 place(s))</span></summary>
+<div class='grid2'>
+<div><h4>Values</h4><p><code>AMQP</code>, <code>MQTT</code>, <code>STOMP</code>, <code>XMPP</code>, <code>Kafka</code></p></div>
+<div><h4>Appears in</h4><ul><li><code>definitions/iotDataSourceWithConfig/properties/protocol</code></li><li><code>definitions/iotDataSourceWithConfig/patternProperties/[A-Za-z_][A-Za-z0-9_-]*$/properties/protocol</code></li></ul></div>
+</div></details>
+<details><summary><code>GET</code>, <code>POST</code>, <code>PUT</code>, <code>PATCH</code>, <code>DELETE</code> <span class='muted'>(used in 3 place(s))</span></summary>
+<div class='grid2'>
+<div><h4>Values</h4><p><code>GET</code>, <code>POST</code>, <code>PUT</code>, <code>PATCH</code>, <code>DELETE</code></p></div>
+<div><h4>Appears in</h4><ul><li><code>definitions/iotDataSourceWithConfig/properties/method</code></li><li><code>definitions/iotDataSourceWithConfig/patternProperties/[A-Za-z_][A-Za-z0-9_-]*$/properties/method</code></li><li><code>definitions/iotDataSource/properties/method</code></li></ul></div>
+</div></details>
+<details><summary><code>Kafka</code>, <code>RabbitMQ</code>, <code>Mosquitto</code>, <code>EMQX</code>, <code>hiveMQ</code> <span class='muted'>(used in 3 place(s))</span></summary>
+<div class='grid2'>
+<div><h4>Values</h4><p><code>Kafka</code>, <code>RabbitMQ</code>, <code>Mosquitto</code>, <code>EMQX</code>, <code>hiveMQ</code></p></div>
+<div><h4>Appears in</h4><ul><li><code>definitions/iotDataSourceWithConfig/properties/broker</code></li><li><code>definitions/iotDataSourceWithConfig/patternProperties/[A-Za-z_][A-Za-z0-9_-]*$/properties/broker</code></li><li><code>definitions/iotDataSource/properties/broker</code></li></ul></div>
+</div></details>
+<details><summary><code>AMQP</code>, <code>MQTT</code>, <code>STOMP</code>, <code>XMPP</code> <span class='muted'>(used in 1 place(s))</span></summary>
+<div class='grid2'>
+<div><h4>Values</h4><p><code>AMQP</code>, <code>MQTT</code>, <code>STOMP</code>, <code>XMPP</code></p></div>
+<div><h4>Appears in</h4><ul><li><code>definitions/iotDataSource/properties/protocol</code></li></ul></div>
+</div></details>
+<details><summary><code>binary</code>, <code>multiclass</code>, <code>regression</code> <span class='muted'>(used in 1 place(s))</span></summary>
+<div class='grid2'>
+<div><h4>Values</h4><p><code>binary</code>, <code>multiclass</code>, <code>regression</code></p></div>
+<div><h4>Appears in</h4><ul><li><code>definitions/featureDef/properties/target-type</code></li></ul></div>
+</div></details>
+<details><summary><code>started</code>, <code>completed</code>, <code>bacteria_detected</code> <span class='muted'>(used in 1 place(s))</span></summary>
+<div class='grid2'>
+<div><h4>Values</h4><p><code>started</code>, <code>completed</code>, <code>bacteria_detected</code></p></div>
+<div><h4>Appears in</h4><ul><li><code>definitions/anchor/properties/event</code></li></ul></div>
+</div></details>
+<details><summary><code>Batch</code>, <code>Incremental</code> <span class='muted'>(used in 1 place(s))</span></summary>
+<div class='grid2'>
+<div><h4>Values</h4><p><code>Batch</code>, <code>Incremental</code></p></div>
+<div><h4>Appears in</h4><ul><li><code>definitions/models/patternProperties/^[A-Za-z_][A-Za-z0-9_-]+$/properties/training/properties/type</code></li></ul></div>
+</div></details>
+<details><summary><code>MessageOriented</code>, <code>HTTPCompliant</code> <span class='muted'>(used in 3 place(s))</span></summary>
+<div class='grid2'>
+<div><h4>Values</h4><p><code>MessageOriented</code>, <code>HTTPCompliant</code></p></div>
+<div><h4>Appears in</h4><ul><li><code>definitions/iotDataSourceWithConfig/properties/paradigm</code></li><li><code>definitions/iotDataSourceWithConfig/patternProperties/[A-Za-z_][A-Za-z0-9_-]*$/properties/paradigm</code></li><li><code>definitions/iotDataSource/properties/paradigm</code></li></ul></div>
+</div></details>
+<details><summary><code>Periodic</code>, <code>Event-Based</code> <span class='muted'>(used in 1 place(s))</span></summary>
+<div class='grid2'>
+<div><h4>Values</h4><p><code>Periodic</code>, <code>Event-Based</code></p></div>
+<div><h4>Appears in</h4><ul><li><code>definitions/models/patternProperties/^[A-Za-z_][A-Za-z0-9_-]+$/properties/training/properties/schedule/properties/type</code></li></ul></div>
+</div></details>
+<details><summary><code>Supervised</code>, <code>Unsupervised</code> <span class='muted'>(used in 1 place(s))</span></summary>
+<div class='grid2'>
+<div><h4>Values</h4><p><code>Supervised</code>, <code>Unsupervised</code></p></div>
+<div><h4>Appears in</h4><ul><li><code>definitions/models/patternProperties/^[A-Za-z_][A-Za-z0-9_-]+$/properties/learning-type</code></li></ul></div>
+</div></details>
+</section>
+<section id='definitions'><h2>Definitions</h2>
+<p>Each definition corresponds to a reusable grammar fragment referenced from one or more sections.</p>
+<hr style='border:none;border-top:1px solid var(--line); margin:18px 0'/>
+<h3 id='def-runtime-predictions'>Runtime Predictions <small class='muted'>(<code>runtime-predictions</code>)</small></h3>
+<p><span class='pill'>type: object</span> <span class='pill warn'>additionalProperties: false</span></p>
+<h4>Pattern properties</h4>
+<table><thead><tr><th>Regex</th><th>Schema</th></tr></thead><tbody>
+<tr><td><code>^[A-Za-z_][A-Za-z0-9_-]+$</code></td><td>type: object</td></tr>
+</tbody></table>
+<div class='callout'><strong>Usage hint:</strong> A runtime prediction references a <code>model</code>, a <code>trigger</code> schedule, <code>inputFeatures</code>, and an <code>output</code> block.</div>
+<hr style='border:none;border-top:1px solid var(--line); margin:18px 0'/>
+<h3 id='def-models'>Models <small class='muted'>(<code>models</code>)</small></h3>
+<p><span class='pill'>type: object</span> <span class='pill warn'>additionalProperties: false</span></p>
+<h4>Pattern properties</h4>
+<table><thead><tr><th>Regex</th><th>Schema</th></tr></thead><tbody>
+<tr><td><code>^[A-Za-z_][A-Za-z0-9_-]+$</code></td><td>type: object</td></tr>
+</tbody></table>
+<div class='callout'><strong>Usage hint:</strong> A model references a dataset and provides <code>algorithm</code>, <code>learning-type</code>, training <code>type</code>, optional <code>metrics</code> and a <code>schedule</code> (Periodic vs Event-Based).</div>
+<hr style='border:none;border-top:1px solid var(--line); margin:18px 0'/>
+<h3 id='def-dataset'>Dataset <small class='muted'>(<code>dataset</code>)</small></h3>
+<p><span class='pill'>type: object</span> <span class='pill warn'>additionalProperties: false</span></p>
+<h4>Pattern properties</h4>
+<table><thead><tr><th>Regex</th><th>Schema</th></tr></thead><tbody>
+<tr><td><code>^[A-Za-z_][A-Za-z0-9_-]+$</code></td><td>type: object</td></tr>
+</tbody></table>
+<div class='callout'><strong>Usage hint:</strong> A dataset entry can optionally define a <code>label</code> (supervised) and a <code>sampling-point</code> anchor. <code>data</code> is an array with at least one item.</div>
+<hr style='border:none;border-top:1px solid var(--line); margin:18px 0'/>
+<h3 id='def-features'>Features <small class='muted'>(<code>features</code>)</small></h3>
+<p><span class='pill'>type: object</span> <span class='pill warn'>additionalProperties: false</span></p>
+<h4>Pattern properties</h4>
+<table><thead><tr><th>Regex</th><th>Schema</th></tr></thead><tbody>
+<tr><td><code>^[A-Za-z_][A-Za-z0-9_-]+$</code></td><td>Ref: <a href='#def-featureDef'><code>featureDef</code></a></td></tr>
+</tbody></table>
+<hr style='border:none;border-top:1px solid var(--line); margin:18px 0'/>
+<h3 id='def-featureDef'>Featuredef <small class='muted'>(<code>featureDef</code>)</small></h3>
+<p><span class='pill'>type: object</span> <span class='pill warn'>additionalProperties: false</span> <span class='pill ok'>required: from, operation</span></p>
+<h4>Properties</h4>
+<table><thead><tr><th>Name</th><th>Type</th><th>Description</th><th>Notes</th></tr></thead><tbody>
+
+        <tr>
+          <td><code>from</code></td>
+          <td>string</td>
+          <td></td>
+          <td></td>
+        </tr>
+        
+
+        <tr>
+          <td><code>label</code></td>
+          <td>string</td>
+          <td></td>
+          <td></td>
+        </tr>
+        
+
+        <tr>
+          <td><code>operation</code></td>
+          <td>string</td>
+          <td></td>
+          <td>enum</td>
+        </tr>
+        
+
+        <tr>
+          <td><code>fields</code></td>
+          <td>array</td>
+          <td></td>
+          <td></td>
+        </tr>
+        
+
+        <tr>
+          <td><code>field</code></td>
+          <td>string</td>
+          <td></td>
+          <td></td>
+        </tr>
+        
+
+        <tr>
+          <td><code>window</code></td>
+          <td>string</td>
+          <td></td>
+          <td></td>
+        </tr>
+        
+
+        <tr>
+          <td><code>anchor</code></td>
+          <td></td>
+          <td></td>
+          <td>Ref: <a href="#def-anchor">anchor</a></td>
+        </tr>
+        
+
+        <tr>
+          <td><code>target-type</code></td>
+          <td>string</td>
+          <td></td>
+          <td>enum</td>
+        </tr>
+        
+
+        <tr>
+          <td><code>positive-class</code></td>
+          <td>[&#x27;boolean&#x27;, &#x27;string&#x27;, &#x27;number&#x27;]</td>
+          <td>Used when target-type is binary.</td>
+          <td></td>
+        </tr>
+        
+</tbody></table>
+<h4>oneOf</h4>
+<ol>
+<li><details><summary>Show constraint</summary><pre>{
+  &quot;required&quot;: [
+    &quot;fields&quot;
+  ],
+  &quot;not&quot;: {
+    &quot;required&quot;: [
+      &quot;field&quot;
+    ]
+  }
+}</pre></details></li>
+<li><details><summary>Show constraint</summary><pre>{
+  &quot;required&quot;: [
+    &quot;field&quot;
+  ],
+  &quot;not&quot;: {
+    &quot;required&quot;: [
+      &quot;fields&quot;
+    ]
+  }
+}</pre></details></li>
+</ol>
+<div class='callout'><strong>Usage hint:</strong> A feature must define <code>from</code> and <code>operation</code> and must include either <code>field</code> or <code>fields</code> (mutually exclusive).</div>
+<hr style='border:none;border-top:1px solid var(--line); margin:18px 0'/>
+<h3 id='def-anchor'>Anchor <small class='muted'>(<code>anchor</code>)</small></h3>
+<p><span class='pill'>type: object</span> <span class='pill warn'>additionalProperties: false</span> <span class='pill ok'>required: element, event</span></p>
+<h4>Properties</h4>
+<table><thead><tr><th>Name</th><th>Type</th><th>Description</th><th>Notes</th></tr></thead><tbody>
+
+        <tr>
+          <td><code>element</code></td>
+          <td>string</td>
+          <td></td>
+          <td></td>
+        </tr>
+        
+
+        <tr>
+          <td><code>event</code></td>
+          <td>string</td>
+          <td></td>
+          <td>enum</td>
+        </tr>
+        
+</tbody></table>
+<hr style='border:none;border-top:1px solid var(--line); margin:18px 0'/>
+<h3 id='def-iotDataSourceWithConfig'>Iotdatasourcewithconfig <small class='muted'>(<code>iotDataSourceWithConfig</code>)</small></h3>
+<p><span class='pill'>type: object</span> <span class='pill ok'>required: paradigm</span></p>
+<h4>Properties</h4>
+<table><thead><tr><th>Name</th><th>Type</th><th>Description</th><th>Notes</th></tr></thead><tbody>
+
+        <tr>
+          <td><code>format</code></td>
+          <td>string</td>
+          <td></td>
+          <td></td>
+        </tr>
+        
+
+        <tr>
+          <td><code>schema</code></td>
+          <td></td>
+          <td></td>
+          <td>Ref: <a href="#def-variables">variables</a></td>
+        </tr>
+        
+
+        <tr>
+          <td><code>paradigm</code></td>
+          <td>string</td>
+          <td></td>
+          <td>enum</td>
+        </tr>
+        
+
+        <tr>
+          <td><code>protocol</code></td>
+          <td>string</td>
+          <td></td>
+          <td>enum</td>
+        </tr>
+        
+
+        <tr>
+          <td><code>broker</code></td>
+          <td>string</td>
+          <td></td>
+          <td>enum</td>
+        </tr>
+        
+
+        <tr>
+          <td><code>method</code></td>
+          <td>string</td>
+          <td></td>
+          <td>enum</td>
+        </tr>
+        
+
+        <tr>
+          <td><code>sampling-time</code></td>
+          <td>string</td>
+          <td></td>
+          <td></td>
+        </tr>
+        
+</tbody></table>
+<h4>Pattern properties</h4>
+<table><thead><tr><th>Regex</th><th>Schema</th></tr></thead><tbody>
+<tr><td><code>[A-Za-z_][A-Za-z0-9_-]*$</code></td><td>type: object; required: schema</td></tr>
+</tbody></table>
+<h4>allOf</h4>
+<ol>
+<li><details><summary>Show constraint</summary><pre>{
+  &quot;description&quot;: &quot;Regla global: si config.paradigm=MessageOriented, sensores SIN paradigm heredan MessageOriented.&quot;,
+  &quot;if&quot;: {
+    &quot;properties&quot;: {
+      &quot;paradigm&quot;: {
+        &quot;const&quot;: &quot;MessageOriented&quot;
+      }
+    },
+    &quot;required&quot;: [
+      &quot;paradigm&quot;
+    ]
+  },
+  &quot;then&quot;: {
+    &quot;patternProperties&quot;: {
+      &quot;[A-Za-z_][A-Za-z0-9_-]*$&quot;: {
+        &quot;if&quot;: {
+          &quot;not&quot;: {
+            &quot;required&quot;: [
+              &quot;paradigm&quot;
+            ]
+          }
+        },
+        &quot;then&quot;: {
+          &quot;required&quot;: [
+            &quot;topic&quot;
+          ],
+          &quot;not&quot;: {
+            &quot;anyOf&quot;: [
+              {
+                &quot;required&quot;: [
+                  &quot;end-point&quot;
+                ]
+              },
+              {
+                &quot;required&quot;: [
+                  &quot;method&quot;
+                ]
+              },
+ 
+  ...
+</pre></details></li>
+<li><details><summary>Show constraint</summary><pre>{
+  &quot;description&quot;: &quot;Regla global: si config.paradigm=HTTPCompliant, sensores SIN paradigm heredan HTTPCompliant.&quot;,
+  &quot;if&quot;: {
+    &quot;properties&quot;: {
+      &quot;paradigm&quot;: {
+        &quot;const&quot;: &quot;HTTPCompliant&quot;
+      }
+    },
+    &quot;required&quot;: [
+      &quot;paradigm&quot;
+    ]
+  },
+  &quot;then&quot;: {
+    &quot;patternProperties&quot;: {
+      &quot;[A-Za-z_][A-Za-z0-9_-]*$&quot;: {
+        &quot;if&quot;: {
+          &quot;not&quot;: {
+            &quot;required&quot;: [
+              &quot;paradigm&quot;
+            ]
+          }
+        },
+        &quot;then&quot;: {
+          &quot;required&quot;: [
+            &quot;end-point&quot;
+          ],
+          &quot;not&quot;: {
+            &quot;anyOf&quot;: [
+              {
+                &quot;required&quot;: [
+                  &quot;topic&quot;
+                ]
+              },
+              {
+                &quot;required&quot;: [
+                  &quot;protocol&quot;
+                ]
+              },
+     
+  ...
+</pre></details></li>
+</ol>
+<div class='callout'><strong>Usage hint:</strong> Supports a global <code>config*</code> block plus per-sensor blocks; sensors may override <code>paradigm</code> and inherit from the global config when omitted.</div>
+<hr style='border:none;border-top:1px solid var(--line); margin:18px 0'/>
+<h3 id='def-iotDataSource'>Iotdatasource <small class='muted'>(<code>iotDataSource</code>)</small></h3>
+<p><span class='pill'>type: object</span> <span class='pill warn'>additionalProperties: false</span> <span class='pill ok'>required: paradigm, schema</span></p>
+<h4>Properties</h4>
+<table><thead><tr><th>Name</th><th>Type</th><th>Description</th><th>Notes</th></tr></thead><tbody>
+
+        <tr>
+          <td><code>format</code></td>
+          <td>string</td>
+          <td></td>
+          <td></td>
+        </tr>
+        
+
+        <tr>
+          <td><code>host</code></td>
+          <td>string</td>
+          <td></td>
+          <td></td>
+        </tr>
+        
+
+        <tr>
+          <td><code>schema</code></td>
+          <td></td>
+          <td></td>
+          <td>Ref: <a href="#def-variables">variables</a></td>
+        </tr>
+        
+
+        <tr>
+          <td><code>paradigm</code></td>
+          <td>string</td>
+          <td></td>
+          <td>enum</td>
+        </tr>
+        
+
+        <tr>
+          <td><code>protocol</code></td>
+          <td>string</td>
+          <td></td>
+          <td>enum</td>
+        </tr>
+        
+
+        <tr>
+          <td><code>broker</code></td>
+          <td>string</td>
+          <td></td>
+          <td>enum</td>
+        </tr>
+        
+
+        <tr>
+          <td><code>topic</code></td>
+          <td>string</td>
+          <td></td>
+          <td></td>
+        </tr>
+        
+
+        <tr>
+          <td><code>end-point</code></td>
+          <td>string</td>
+          <td></td>
+          <td></td>
+        </tr>
+        
+
+        <tr>
+          <td><code>method</code></td>
+          <td>string</td>
+          <td></td>
+          <td>enum</td>
+        </tr>
+        
+
+        <tr>
+          <td><code>sampling-time</code></td>
+          <td>string</td>
+          <td></td>
+          <td></td>
+        </tr>
+        
+</tbody></table>
+<h4>oneOf</h4>
+<ol>
+<li><details><summary>Show constraint</summary><pre>{
+  &quot;properties&quot;: {
+    &quot;paradigm&quot;: {
+      &quot;const&quot;: &quot;MessageOriented&quot;
+    }
+  },
+  &quot;required&quot;: [
+    &quot;host&quot;,
+    &quot;protocol&quot;,
+    &quot;topic&quot;,
+    &quot;broker&quot;
+  ],
+  &quot;not&quot;: {
+    &quot;required&quot;: [
+      &quot;end-point&quot;,
+      &quot;method&quot;,
+      &quot;sampling-time&quot;
+    ]
+  }
+}</pre></details></li>
+<li><details><summary>Show constraint</summary><pre>{
+  &quot;properties&quot;: {
+    &quot;paradigm&quot;: {
+      &quot;const&quot;: &quot;HTTPCompliant&quot;
+    }
+  },
+  &quot;required&quot;: [
+    &quot;end-point&quot;,
+    &quot;method&quot;,
+    &quot;sampling-time&quot;
+  ],
+  &quot;not&quot;: {
+    &quot;required&quot;: [
+      &quot;host&quot;,
+      &quot;protocol&quot;,
+      &quot;topic&quot;,
+      &quot;broker&quot;
+    ]
+  }
+}</pre></details></li>
+</ol>
+<div class='callout'><strong>Usage hint:</strong> Choose <code>paradigm</code> = <code>MessageOriented</code> (requires <code>host</code>, <code>protocol</code>, <code>topic</code>, <code>broker</code>) or <code>HTTPCompliant</code> (requires <code>end-point</code>, <code>method</code>, <code>sampling-time</code>).</div>
+<hr style='border:none;border-top:1px solid var(--line); margin:18px 0'/>
+<h3 id='def-processContext'>Processcontext <small class='muted'>(<code>processContext</code>)</small></h3>
+<p><span class='pill'>type: object</span></p>
+<h4>Properties</h4>
+<table><thead><tr><th>Name</th><th>Type</th><th>Description</th><th>Notes</th></tr></thead><tbody>
+
+        <tr>
+          <td><code>engine</code></td>
+          <td>string</td>
+          <td></td>
+          <td>enum</td>
+        </tr>
+        
+
+        <tr>
+          <td><code>host</code></td>
+          <td>string</td>
+          <td></td>
+          <td></td>
+        </tr>
+        
+
+        <tr>
+          <td><code>process-id</code></td>
+          <td>string</td>
+          <td></td>
+          <td></td>
+        </tr>
+        
+</tbody></table>
+<div class='callout'><strong>Usage hint:</strong> Defines BPMN engine vendor, host, and the process id to monitor.</div>
+<hr style='border:none;border-top:1px solid var(--line); margin:18px 0'/>
+<h3 id='def-processDataSource'>Processdatasource <small class='muted'>(<code>processDataSource</code>)</small></h3>
+<p><span class='pill'>type: object</span></p>
+<h4>Pattern properties</h4>
+<table><thead><tr><th>Regex</th><th>Schema</th></tr></thead><tbody>
+<tr><td><code>^[A-Za-z_][A-Za-z0-9_-]+$</code></td><td>type: object; required: elements</td></tr>
+</tbody></table>
+<div class='callout'><strong>Usage hint:</strong> Process data sources define BPMN elements (tasks/gateways/etc.) and the events to capture, optionally with variable schemas per event.</div>
+<hr style='border:none;border-top:1px solid var(--line); margin:18px 0'/>
+<h3 id='def-bpmnElement'>Bpmnelement <small class='muted'>(<code>bpmnElement</code>)</small></h3>
+<p><span class='pill'>type: object</span> <span class='pill warn'>additionalProperties: false</span></p>
+<h4>Pattern properties</h4>
+<table><thead><tr><th>Regex</th><th>Schema</th></tr></thead><tbody>
+<tr><td><code>^[A-Za-z_][A-Za-z0-9_-]*$</code></td><td>required: type, events</td></tr>
+</tbody></table>
+<hr style='border:none;border-top:1px solid var(--line); margin:18px 0'/>
+<h3 id='def-events'>Events <small class='muted'>(<code>events</code>)</small></h3>
+<p>An event can be a simple name (e.g., &#x27;bacteria_detected&#x27;) or an object keyed by event name with optional variables.</p>
+<h4>oneOf</h4>
+<ol>
+<li><details><summary>Show constraint</summary><pre>{
+  &quot;type&quot;: &quot;array&quot;,
+  &quot;minItems&quot;: 1,
+  &quot;items&quot;: {
+    &quot;type&quot;: &quot;string&quot;,
+    &quot;minLength&quot;: 1
+  }
+}</pre></details></li>
+<li>Ref: <a href='#def-eventObject'><code>eventObject</code></a></li>
+</ol>
+<hr style='border:none;border-top:1px solid var(--line); margin:18px 0'/>
+<h3 id='def-eventObject'>Eventobject <small class='muted'>(<code>eventObject</code>)</small></h3>
+<p><span class='pill'>type: object</span> <span class='pill warn'>additionalProperties: false</span></p>
+<h4>Pattern properties</h4>
+<table><thead><tr><th>Regex</th><th>Schema</th></tr></thead><tbody>
+<tr><td><code>^(started|completed|cancelled|interrupted|assigned|executed|triggered|path-evaluation)$</code></td><td><details><summary>Show schema</summary><pre>{
+  &quot;additionalProperties&quot;: false,
+  &quot;properties&quot;: {
+    &quot;variables&quot;: {
+      &quot;$ref&quot;: &quot;#/definitions/variables&quot;
+    }
+  }
+}</pre></details></td></tr>
+</tbody></table>
+<hr style='border:none;border-top:1px solid var(--line); margin:18px 0'/>
+<h3 id='def-variables'>Variables <small class='muted'>(<code>variables</code>)</small></h3>
+<p><span class='pill'>type: array</span></p>
+<hr style='border:none;border-top:1px solid var(--line); margin:18px 0'/>
+<h3 id='def-variable'>Variable <small class='muted'>(<code>variable</code>)</small></h3>
+<p><span class='pill'>type: object</span> <span class='pill warn'>additionalProperties: false</span></p>
+<p>A variable is represented as an object with one mandatory property: { &lt;varName&gt;: &lt;varTypec&gt; } and an optional internal_id.</p>
+<h4>Properties</h4>
+<table><thead><tr><th>Name</th><th>Type</th><th>Description</th><th>Notes</th></tr></thead><tbody>
+
+        <tr>
+          <td><code>internal-id</code></td>
+          <td>string</td>
+          <td></td>
+          <td></td>
+        </tr>
+        
+</tbody></table>
+<h4>Pattern properties</h4>
+<table><thead><tr><th>Regex</th><th>Schema</th></tr></thead><tbody>
+<tr><td><code>^(?!internal-id$)[A-Za-z_][A-Za-z0-9_-]+$</code></td><td>type: string; enum</td></tr>
+</tbody></table>
+<h4>allOf</h4>
+<ol>
+<li><details><summary>Show constraint</summary><pre>{
+  &quot;description&quot;: &quot;Require at least one dynamic (non &#x27;internal-id&#x27;) property.&quot;,
+  &quot;not&quot;: {
+    &quot;required&quot;: [
+      &quot;internal-id&quot;
+    ],
+    &quot;maxProperties&quot;: 1
+  }
+}</pre></details></li>
+</ol>
+</section>
+</div></main>
+<footer style='padding:18px; text-align:center; color:var(--muted); border-top:1px solid var(--line);'>Generated documentation from JSON-Schema.</footer>
+</body></html>
